@@ -11,6 +11,7 @@ from datetime import datetime
 
 load_dotenv()
 config = get_config()
+setup_logging()
 logger = logging.getLogger(__name__)
 
 HOST = os.getenv('HOST')
