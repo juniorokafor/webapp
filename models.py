@@ -16,8 +16,8 @@ class Source(Base):
     __tablename__ = "source"
 
     source_id = Column(Integer, primary_key=True, autoincrement=True)
-    source = Column(String(50), unique=True, nullable=False)      # device_id
-    collector_type = Column(String(50), nullable=False)           # laptop, crypto, mobile …
+    source = Column(String(50), unique=True, nullable=False)
+    collector_type = Column(String(50), nullable=False)
 
     metric_values = relationship("MetricValue", back_populates="source_ref")
 
