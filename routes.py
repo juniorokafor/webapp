@@ -80,8 +80,8 @@ def home():
     return (
         "Flask server — "
         "<a href='/metrics/latest/json'>JSON</a> | "
-        "<a href='/metrics/latest/objects'>Objects</a>"
-        "<a href='/dashboard>Dashboard</a>"
+        "<a href='/metrics/latest/objects'>Objects</a> | "
+        "<a href='/dashboard'>Dashboard</a>"
     )
 
 
