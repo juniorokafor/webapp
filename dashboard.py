@@ -30,7 +30,7 @@ def create_dashboard(server):
 
         dcc.Interval(
             id="interval",
-            interval=500,
+            interval=3000,
             n_intervals=0
         )
     ])
