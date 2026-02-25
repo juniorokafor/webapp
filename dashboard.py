@@ -1,3 +1,4 @@
+import html as html_lib
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
@@ -140,15 +141,22 @@ def create_dashboard(server):
         # String / boolean → text card
         if latest.value_string is not None:
             session.close()
-            fig = go.Figure()
-            fig.add_annotation(
-                text=str(latest.value_string),
-                xref="paper", yref="paper",
-                x=0.5, y=0.5,
-                showarrow=False,
-                font={"size": 36}
-            )
-            fig.update_layout(title=metric_def.metric_name)
+            fig = go.Figure(go.Table(
+                header=dict(
+                    values=[f"<b>{html_lib.escape(metric_def.metric_name)}</b>"],
+                    fill_color="lightgrey",
+                    font={"size": 13},
+                    align="center",
+                    height=40,
+                ),
+                cells=dict(
+                    values=[[html_lib.escape(str(latest.value_string))]],
+                    font={"size": 24},
+                    align="center",
+                    height=80,
+                )
+            ))
+            fig.update_layout(margin={"l": 20, "r": 20, "t": 20, "b": 20})
             return fig
 
         # Percentage → gauge
