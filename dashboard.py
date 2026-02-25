@@ -42,10 +42,20 @@ def create_dashboard(server):
     def load_devices(_):
         session = SessionLocal()
         devices = session.execute(select(Source)).scalars().all()
+
+        # Look up the hostname metric for each source
+        hostname_stmt = (
+            select(MetricValue.source_id, MetricValue.value_string)
+            .join(MetricDefinition, MetricValue.metric_def_id == MetricDefinition.metric_def_id)
+            .where(MetricDefinition.metric_name == "system_info.hostname")
+        )
+        hostname_rows = session.execute(hostname_stmt).all()
         session.close()
 
+        hostname_map = {row.source_id: row.value_string for row in hostname_rows}
+
         return [
-            {"label": d.source, "value": d.source}
+            {"label": hostname_map.get(d.source_id, d.source), "value": d.source}
             for d in devices
         ]
 
@@ -54,16 +64,24 @@ def create_dashboard(server):
         Output("metric-dropdown", "options"),
         Input("device-dropdown", "value")
     )
-    def load_metrics(device_id):
-        if not device_id:
+    def load_metrics(device_source):
+        if not device_source:
             return []
 
         session = SessionLocal()
 
+        source = session.execute(
+            select(Source).where(Source.source == device_source)
+        ).scalar_one_or_none()
+
+        if not source:
+            session.close()
+            return []
+
         stmt = (
             select(MetricDefinition)
             .join(MetricValue)
-            .where(MetricValue.source_id == device_id)
+            .where(MetricValue.source_id == source.source_id)
             .distinct()
         )
 
@@ -82,17 +100,25 @@ def create_dashboard(server):
         Input("device-dropdown", "value"),
         Input("metric-dropdown", "value")
     )
-    def update_gauge(_, device_id, metric_def_id):
+    def update_gauge(_, device_source, metric_def_id):
 
-        if not device_id or not metric_def_id:
+        if not device_source or not metric_def_id:
             return go.Figure()
 
         session = SessionLocal()
 
+        source = session.execute(
+            select(Source).where(Source.source == device_source)
+        ).scalar_one_or_none()
+
+        if not source:
+            session.close()
+            return go.Figure()
+
         stmt = (
             select(MetricValue)
             .where(
-                MetricValue.source_id == device_id,
+                MetricValue.source_id == source.source_id,
                 MetricValue.metric_def_id == metric_def_id
             )
             .order_by(desc(MetricValue.captured_at))
