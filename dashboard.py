@@ -17,7 +17,7 @@ def create_dashboard(server):
 
     # ---- Layout ----
     dash_app.layout = html.Div([
-        html.H2("Live Metric Gauge"),
+        html.H2("Live Metrics Dashboard"),
 
         html.Label("Select Device"),
         dcc.Dropdown(id="device-dropdown"),
@@ -93,14 +93,14 @@ def create_dashboard(server):
             for m in metrics
         ]
 
-    # ---- Update Gauge ----
+    # ---- Update Chart ----
     @dash_app.callback(
         Output("gauge", "figure"),
         Input("interval", "n_intervals"),
         Input("device-dropdown", "value"),
         Input("metric-dropdown", "value")
     )
-    def update_gauge(_, device_source, metric_def_id):
+    def update_chart(_, device_source, metric_def_id):
 
         if not device_source or not metric_def_id:
             return go.Figure()
@@ -115,7 +115,15 @@ def create_dashboard(server):
             session.close()
             return go.Figure()
 
-        stmt = (
+        metric_def = session.execute(
+            select(MetricDefinition).where(MetricDefinition.metric_def_id == metric_def_id)
+        ).scalar_one_or_none()
+
+        if not metric_def:
+            session.close()
+            return go.Figure()
+
+        latest = session.execute(
             select(MetricValue)
             .where(
                 MetricValue.source_id == source.source_id,
@@ -123,23 +131,72 @@ def create_dashboard(server):
             )
             .order_by(desc(MetricValue.captured_at))
             .limit(1)
-        )
+        ).scalar_one_or_none()
 
-        result = session.execute(stmt).scalar_one_or_none()
+        if not latest:
+            session.close()
+            return go.Figure()
+
+        # String / boolean → text card
+        if latest.value_string is not None:
+            session.close()
+            fig = go.Figure()
+            fig.add_annotation(
+                text=str(latest.value_string),
+                xref="paper", yref="paper",
+                x=0.5, y=0.5,
+                showarrow=False,
+                font={"size": 36}
+            )
+            fig.update_layout(title=metric_def.metric_name)
+            return fig
+
+        # Percentage → gauge
+        if metric_def.unit == "%":
+            session.close()
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=latest.value_numeric or 0,
+                title={"text": metric_def.metric_name},
+                gauge={
+                    "axis": {"range": [0, 100]},
+                    "bar": {"color": "blue"},
+                }
+            ))
+            fig.add_annotation(
+                text=latest.captured_at.strftime("%Y-%m-%d %H:%M:%S"),
+                xref="paper", yref="paper",
+                x=0.5, y=0.0,
+                showarrow=False,
+                font={"size": 12, "color": "gray"}
+            )
+            return fig
+
+        # All other numeric (crypto prices, bytes, etc.) → line graph
+        rows = session.execute(
+            select(MetricValue)
+            .where(
+                MetricValue.source_id == source.source_id,
+                MetricValue.metric_def_id == metric_def_id
+            )
+            .order_by(MetricValue.captured_at)
+            .limit(100)
+        ).scalars().all()
         session.close()
 
-        value = result.value_numeric if result else 0
+        times = [r.captured_at for r in rows]
+        values = [r.value_numeric for r in rows]
 
-        fig = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=value or 0,
-            title={"text": "Current Value"},
-            gauge={
-                "axis": {"range": [0, 100]},
-                "bar": {"color": "blue"},
-            }
+        fig = go.Figure(go.Scatter(
+            x=times,
+            y=values,
+            mode="lines+markers",
         ))
-
+        fig.update_layout(
+            title=metric_def.metric_name,
+            xaxis_title="Time",
+            yaxis_title=metric_def.unit or "Value",
+        )
         return fig
 
     return dash_app
