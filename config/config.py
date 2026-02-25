@@ -2,10 +2,10 @@ import json
 import os
 import logging
 import logging.handlers
+from functools import lru_cache
 import colorlog
 from pathlib import Path
 from typing import Dict
-from functools import lru_cache
 
 @lru_cache(maxsize=1)
 def get_config() -> Dict:

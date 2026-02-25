@@ -1,5 +1,5 @@
-from sqlalchemy import Column, DateTime, Double, ForeignKey, Index, Integer, String
-from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy import Column, DateTime, Double, ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
@@ -19,8 +19,6 @@ class Source(Base):
     source = Column(String(50), unique=True, nullable=False)
     collector_type = Column(String(50), nullable=False)
 
-    metric_values = relationship("MetricValue", back_populates="source_ref")
-
     def __repr__(self) -> str:
         return f"<Source {self.source!r} ({self.collector_type})>"
 
@@ -37,8 +35,6 @@ class MetricDefinition(Base):
     metric_def_id = Column(Integer, primary_key=True, autoincrement=True)
     metric_name = Column(String(100), unique=True, nullable=False)
     unit = Column(String(20), nullable=True)                      # %, GB, bytes, eur …
-
-    metric_values = relationship("MetricValue", back_populates="metric_def")
 
     def __repr__(self) -> str:
         return f"<MetricDefinition {self.metric_name!r} unit={self.unit!r}>"
@@ -71,11 +67,10 @@ class MetricValue(Base):
     value_numeric = Column(Double, nullable=True)
     value_string = Column(String(255), nullable=True)
 
-    source_ref = relationship("Source", back_populates="metric_values")
-    metric_def = relationship("MetricDefinition", back_populates="metric_values")
-
     __table_args__ = (
         Index("ix_metric_values_def_captured", "metric_def_id", "captured_at"),
+        UniqueConstraint("source_id", "metric_def_id", "captured_at",
+                         name="uq_metric_values_source_def_time"),
     )
 
     def __repr__(self) -> str:
