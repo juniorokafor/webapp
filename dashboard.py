@@ -45,7 +45,7 @@ def create_dashboard(server):
         session.close()
 
         return [
-            {"label": d.source, "value": d.source_id}
+            {"label": d.source, "value": d.source}
             for d in devices
         ]
 
