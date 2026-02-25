@@ -67,3 +67,11 @@ def setup_logging() -> None:
         )
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
+
+THEME = {
+    "surface": "#1e1e1e",
+    "bg": "#121212",
+    "text": "#e0e0e0",
+    "muted": "#aaaaaa",
+    "accent": "#4a9eff",
+}
