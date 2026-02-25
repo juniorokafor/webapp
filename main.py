@@ -1,24 +1,29 @@
+import json
 import logging
 import os
+from datetime import datetime
+from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, request
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import sessionmaker
 
-from config.config import get_config, setup_logging
+from config.config import setup_logging
 from ingestion import ingest_payload
 from models import Base, MetricDefinition, MetricValue, Source
 
 load_dotenv()
-config = get_config()
 setup_logging()
 logger = logging.getLogger(__name__)
 
 HOST = os.getenv("HOST", "localhost")
 PORT = os.getenv("PORT", 5000)
 
-DATABASE_URL = "sqlite:///metrics.db"
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    f"sqlite:///{Path(__file__).parent / 'metrics.db'}"
+)
 engine = create_engine(DATABASE_URL, echo=False)
 Base.metadata.create_all(engine)
 SessionLocal = sessionmaker(bind=engine)
@@ -66,6 +71,16 @@ def _row_to_dict(mv: MetricValue, md: MetricDefinition, src: Source) -> dict:
     }
 
 
+def _format_metric_repr(mv: MetricValue, md: MetricDefinition, src: Source) -> str:
+    value = mv.value_numeric if mv.value_numeric is not None else mv.value_string
+    unit_str = f", unit={md.unit!r}" if md.unit is not None else ""
+    return (
+        f"Metric(name={md.metric_name!r}, value={value!r}, "
+        f"collector_type={src.collector_type!r}, "
+        f"timestamp={mv.captured_at.isoformat()!r}{unit_str})"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -84,10 +99,13 @@ def home():
 def receive_metrics():
     """Receive a metrics payload, persist it, and return an insert count."""
     payload = request.get_json(force=True)
-    logger.info(f"Received payload with {len(payload.get('metrics', []))} metrics")
 
+    if payload is None:
+        return jsonify({"error": "Invalid JSON body"}), 400
     if "metrics" not in payload:
         return jsonify({"error": "No metrics found in payload"}), 400
+
+    logger.info(f"Received payload with {len(payload['metrics'])} metrics")
 
     try:
         with SessionLocal() as session:
@@ -108,8 +126,6 @@ def latest_metrics_json():
     if not rows:
         return jsonify({"message": "No metrics available yet"}), 404
 
-    import json
-    from datetime import datetime
     data = [_row_to_dict(mv, md, src) for mv, md, src in rows]
     body = json.dumps(
         {
@@ -132,19 +148,7 @@ def latest_metrics_objects():
     if not rows:
         return jsonify({"message": "No metrics available yet"}), 404
 
-    import json
-    from datetime import datetime
-
-    reprs = []
-    for mv, md, src in rows:
-        value = mv.value_numeric if mv.value_numeric is not None else mv.value_string
-        unit_str = f", unit={md.unit!r}" if md.unit is not None else ""
-        reprs.append(
-            f"Metric(name={md.metric_name!r}, value={value!r}, "
-            f"collector_type={src.collector_type!r}, "
-            f"timestamp={mv.captured_at.isoformat()!r}{unit_str})"
-        )
-
+    reprs = [_format_metric_repr(mv, md, src) for mv, md, src in rows]
     body = json.dumps(
         {
             "status": "success",
@@ -166,15 +170,7 @@ def latest_metrics_text():
     if not rows:
         return Response("No metrics available", mimetype="text/plain"), 404
 
-    lines = []
-    for mv, md, src in rows:
-        value = mv.value_numeric if mv.value_numeric is not None else mv.value_string
-        unit_str = f", unit={md.unit!r}" if md.unit is not None else ""
-        lines.append(
-            f"Metric(name={md.metric_name!r}, value={value!r}, "
-            f"collector_type={src.collector_type!r}, "
-            f"timestamp={mv.captured_at.isoformat()!r}{unit_str})"
-        )
+    lines = [_format_metric_repr(mv, md, src) for mv, md, src in rows]
     return Response("\n".join(lines), mimetype="text/plain")
 
 
@@ -191,4 +187,8 @@ def status():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host=HOST, port=int(PORT))
+    app.run(
+        debug=os.getenv("FLASK_DEBUG", "false").lower() == "true",
+        host=HOST,
+        port=int(PORT),
+    )

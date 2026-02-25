@@ -1,11 +1,10 @@
 # virtual env
-
-venv/*
+/venv/
 
 .env
 
-
 __pycache__/
-config/__pycache__
 
 logs/
+
+metrics.db

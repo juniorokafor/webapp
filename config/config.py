@@ -2,10 +2,12 @@ import json
 import os
 import logging
 import logging.handlers
+from functools import lru_cache
 import colorlog
 from pathlib import Path
 from typing import Dict
 
+@lru_cache(maxsize=1)
 def get_config() -> Dict:
     config_dir = Path(__file__).parent
     config_path = config_dir / "config.json"
@@ -17,7 +19,7 @@ def get_config() -> Dict:
         config = json.load(f)
     return config
 
-def setup_logging() -> logging.Logger:
+def setup_logging() -> None:
     config = get_config()
     log_config = config['logging_config']
     console_config = log_config['console_output']
@@ -65,6 +67,3 @@ def setup_logging() -> logging.Logger:
         )
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
-    
-    return logger
-
