@@ -16,24 +16,49 @@ def create_dashboard(server):
         url_base_pathname="/dashboard/"
     )
 
+    SURFACE = "#1e1e1e"
+    BG = "#121212"
+    TEXT = "#e0e0e0"
+    MUTED = "#aaaaaa"
+    ACCENT = "#4a9eff"
+
     # ---- Layout ----
     dash_app.layout = html.Div([
-        html.H2("Live Metrics Dashboard"),
+        html.H2(
+            "Live Metrics Dashboard",
+            style={"color": TEXT, "marginBottom": "24px", "letterSpacing": "1px"}
+        ),
 
-        html.Label("Select Device"),
-        dcc.Dropdown(id="device-dropdown"),
+        html.Label("Select Device", style={"color": MUTED, "fontSize": "12px", "marginBottom": "4px"}),
+        dcc.Dropdown(
+            id="device-dropdown",
+            style={"marginBottom": "16px"}
+        ),
 
-        html.Label("Select Metric"),
-        dcc.Dropdown(id="metric-dropdown"),
+        html.Label("Select Metric", style={"color": MUTED, "fontSize": "12px", "marginBottom": "4px"}),
+        dcc.Dropdown(
+            id="metric-dropdown",
+            style={"marginBottom": "24px"}
+        ),
 
-        dcc.Graph(id="gauge"),
+        dcc.Graph(
+            id="gauge",
+            style={"borderRadius": "8px", "overflow": "hidden"}
+        ),
 
         dcc.Interval(
             id="interval",
             interval=3000,
             n_intervals=0
         )
-    ])
+    ], style={
+        "backgroundColor": BG,
+        "minHeight": "100vh",
+        "padding": "40px 60px",
+        "maxWidth": "960px",
+        "margin": "0 auto",
+        "boxSizing": "border-box",
+    })
 
     # ---- Populate Device Dropdown ----
     @dash_app.callback(
@@ -138,25 +163,35 @@ def create_dashboard(server):
             session.close()
             return go.Figure()
 
+        SURFACE = "#1e1e1e"
+        BG = "#121212"
+        TEXT = "#e0e0e0"
+        MUTED = "#aaaaaa"
+        ACCENT = "#4a9eff"
+
         # String / boolean → text card
         if latest.value_string is not None:
             session.close()
             fig = go.Figure(go.Table(
                 header=dict(
                     values=[f"<b>{html_lib.escape(metric_def.metric_name)}</b>"],
-                    fill_color="lightgrey",
-                    font={"size": 13},
+                    fill_color="#2c2c2c",
+                    font={"size": 13, "color": TEXT},
                     align="center",
                     height=40,
                 ),
                 cells=dict(
                     values=[[html_lib.escape(str(latest.value_string))]],
-                    font={"size": 24},
+                    fill_color=SURFACE,
+                    font={"size": 24, "color": TEXT},
                     align="center",
                     height=80,
                 )
             ))
-            fig.update_layout(margin={"l": 20, "r": 20, "t": 20, "b": 20})
+            fig.update_layout(
+                margin={"l": 20, "r": 20, "t": 20, "b": 20},
+                paper_bgcolor=SURFACE,
+            )
             return fig
 
         # Percentage → gauge
@@ -165,10 +200,13 @@ def create_dashboard(server):
             fig = go.Figure(go.Indicator(
                 mode="gauge+number",
                 value=latest.value_numeric or 0,
-                title={"text": metric_def.metric_name},
+                title={"text": metric_def.metric_name, "font": {"color": TEXT}},
+                number={"font": {"color": TEXT}},
                 gauge={
-                    "axis": {"range": [0, 100]},
-                    "bar": {"color": "blue"},
+                    "axis": {"range": [0, 100], "tickcolor": MUTED},
+                    "bar": {"color": ACCENT},
+                    "bgcolor": "#2c2c2c",
+                    "bordercolor": "#3a3a3a",
                 }
             ))
             fig.add_annotation(
@@ -176,7 +214,11 @@ def create_dashboard(server):
                 xref="paper", yref="paper",
                 x=0.5, y=0.0,
                 showarrow=False,
-                font={"size": 12, "color": "gray"}
+                font={"size": 12, "color": MUTED}
+            )
+            fig.update_layout(
+                paper_bgcolor=SURFACE,
+                font={"color": TEXT},
             )
             return fig
 
@@ -199,11 +241,18 @@ def create_dashboard(server):
             x=times,
             y=values,
             mode="lines+markers",
+            line={"color": ACCENT},
+            marker={"color": ACCENT},
         ))
         fig.update_layout(
-            title=metric_def.metric_name,
+            title={"text": metric_def.metric_name, "font": {"color": TEXT}},
             xaxis_title="Time",
             yaxis_title=metric_def.unit or "Value",
+            paper_bgcolor=SURFACE,
+            plot_bgcolor=BG,
+            font={"color": TEXT},
+            xaxis={"gridcolor": "#2c2c2c", "color": MUTED},
+            yaxis={"gridcolor": "#2c2c2c", "color": MUTED},
         )
         return fig
 
