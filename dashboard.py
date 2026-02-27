@@ -77,7 +77,9 @@ def create_dashboard(server):
         style={"height": "420px"}
     ),
 
+    id="graph-container",
     style={
+        "display": "none",
         "backgroundColor": THEME["surface"],
         "padding": "20px",
         "borderRadius": "12px",
@@ -178,8 +180,12 @@ def create_dashboard(server):
 
     # ---------- Chart Update ----------
 
+    _container_hidden = {"display": "none", "backgroundColor": THEME["surface"], "padding": "20px", "borderRadius": "12px", "boxShadow": "0 4px 12px rgba(0,0,0,0.4)", "border": "1px solid #2c2c2c", "marginTop": "10px"}
+    _container_visible = {**_container_hidden, "display": "block"}
+
     @dash_app.callback(
         Output("gauge", "figure"),
+        Output("graph-container", "style"),
         Input("interval", "n_intervals"),
         Input("device-dropdown", "value"),
         Input("metric-dropdown", "value")
@@ -187,7 +193,7 @@ def create_dashboard(server):
     def update_chart(_, source_id, metric_def_id):
 
         if not source_id or not metric_def_id:
-            return empty_figure()
+            return empty_figure(), _container_hidden
 
         with get_session() as session:
 
@@ -199,7 +205,7 @@ def create_dashboard(server):
             ).scalar_one_or_none()
 
             if not metric_def:
-                return empty_figure()
+                return empty_figure(), _container_hidden
 
             latest = session.execute(
                 select(MetricValue)
@@ -212,7 +218,7 @@ def create_dashboard(server):
             ).scalar_one_or_none()
 
             if not latest:
-                return empty_figure()
+                return empty_figure(), _container_hidden
 
             # ---------- String Value ----------
 
@@ -221,7 +227,7 @@ def create_dashboard(server):
                 return build_text_card(
                     metric_def.metric_name,
                     latest.value_string
-                )
+                ), _container_visible
 
             # ---------- Gauge ----------
 
@@ -231,7 +237,7 @@ def create_dashboard(server):
                     metric_def.metric_name,
                     latest.value_numeric,
                     latest.captured_at
-                )
+                ), _container_visible
 
             # ---------- Line Chart ----------
 
@@ -251,6 +257,6 @@ def create_dashboard(server):
             metric_def.metric_name,
             metric_def.unit,
             rows
-        )
+        ), _container_visible
 
     return dash_app
