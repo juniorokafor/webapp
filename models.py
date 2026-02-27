@@ -11,6 +11,7 @@ class Source(Base):
     Normalised source / device registry.
     'source' is the natural key (device_id from the payload); source_id is
     the surrogate PK used as the FK target in metric_values.
+    "What device did the data come from?"
     """
 
     __tablename__ = "source"
@@ -21,6 +22,7 @@ class Source(Base):
 
     def __repr__(self) -> str:
         return f"<Source {self.source!r} ({self.collector_type})>"
+    # To test how an object will be displayed when printed for debugging purposes.
 
 
 class MetricDefinition(Base):
@@ -28,6 +30,7 @@ class MetricDefinition(Base):
     One row per distinct metric name. Owns the unit so it isn't repeated
     across every reading row (3NF: unit is fully dependent on metric_name,
     not on the composite key of metric_values).
+    "What kind of metric is this?"
     """
 
     __tablename__ = "metric_definitions"
@@ -60,18 +63,21 @@ class MetricValue(Base):
 
     metric_id = Column(Integer, primary_key=True, autoincrement=True)
     source_id = Column(Integer, ForeignKey("source.source_id"), nullable=False)
+    # This reading came from a device in the source table. ^
     metric_def_id = Column(
         Integer, ForeignKey("metric_definitions.metric_def_id"), nullable=False
-    )
+    ) # This reading is for a metric in metric_definitions. ^
     captured_at = Column(DateTime, nullable=False)
     value_numeric = Column(Double, nullable=True)
     value_string = Column(String(255), nullable=True)
 
     __table_args__ = (
         Index("ix_metric_values_def_captured", "metric_def_id", "captured_at"),
+        # Fast lookup of the relevant metric values for a given metric and
+        # timestamp instead of scanning the whole table.
         UniqueConstraint("source_id", "metric_def_id", "captured_at",
                          name="uq_metric_values_source_def_time"),
-    )
+    ) # A device can only have one value per metric per timestamp 
 
     def __repr__(self) -> str:
         return (
