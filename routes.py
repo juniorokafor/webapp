@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import datetime
 
-from flask import Blueprint, Response, jsonify, request
+from flask import Blueprint, Response, jsonify, redirect, request
 from sqlalchemy import func, select
 
 from database import SessionLocal
@@ -77,12 +77,7 @@ def _format_metric_repr(mv, md, src) -> str:
 
 @bp.route("/")
 def home():
-    return (
-        "Flask server — "
-        "<a href='/metrics/latest/json'>JSON</a> | "
-        "<a href='/metrics/latest/objects'>Objects</a> | "
-        "<a href='/dashboard'>Dashboard</a>"
-    )
+    return redirect("/dashboard")
 
 
 @bp.route("/api/metrics", methods=["POST"])
