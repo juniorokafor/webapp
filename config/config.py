@@ -69,9 +69,15 @@ def setup_logging() -> None:
         logger.addHandler(file_handler)
 
 THEME = {
-    "surface": "#1e1e1e",
-    "bg": "#121212",
-    "text": "#e0e0e0",
-    "muted": "#aaaaaa",
-    "accent": "#4a9eff",
+    "surface": "#000000",
+    "bg": "#0a0a0a",
+    "sidebar": "#0d0d0d",
+    "text": "#ffffff",
+    "muted": "#888888",
+    "accent": "#22c55e",
+    "accent2": "#4ade80",
+    "border": "#1a1a1a",
+    "danger": "#e05050",
+    "warning": "#f0a040",
+    "success": "#22c55e",
 }
