@@ -1,13 +1,13 @@
 import logging
 import os
-from dashboard import create_dashboard
 from dotenv import load_dotenv
-from flask import Flask
-
-from config.config import setup_logging
-from routes import bp
 
 load_dotenv()
+
+from dashboard import create_dashboard
+from flask import Flask
+from config.config import setup_logging
+from routes import bp
 setup_logging()
 logger = logging.getLogger(__name__)
 
