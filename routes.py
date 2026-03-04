@@ -1,6 +1,8 @@
 import json
 import logging
+import os
 from datetime import datetime
+from functools import wraps
 
 from flask import Blueprint, Response, jsonify, redirect, request
 from sqlalchemy import func, select
@@ -11,6 +13,16 @@ from models import MetricDefinition, MetricValue, Source
 
 bp = Blueprint("routes", __name__)
 logger = logging.getLogger(__name__)
+
+_API_KEY = os.getenv("API_KEY", "")
+
+def require_api_key(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not _API_KEY or request.headers.get("X-API-Key") != _API_KEY:
+            return jsonify({"error": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated
 
 
 def _latest_metrics_query():
@@ -81,7 +93,7 @@ def home():
 
 
 @bp.route("/api/metrics", methods=["POST"])
-@bp.route("/ingest", methods=["POST"])
+@require_api_key
 def receive_metrics():
     payload = request.get_json(force=True)
 
@@ -99,10 +111,11 @@ def receive_metrics():
         return jsonify({"status": "success", "inserted": inserted}), 201
     except Exception as e:
         logger.error(f"Ingest error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @bp.route("/metrics/latest/json")
+@require_api_key
 def latest_metrics_json():
     rows = _fetch_latest_rows()
     if not rows:
@@ -111,6 +124,7 @@ def latest_metrics_json():
 
 
 @bp.route("/metrics/latest/objects")
+@require_api_key
 def latest_metrics_objects():
     rows = _fetch_latest_rows()
     if not rows:
@@ -119,6 +133,7 @@ def latest_metrics_objects():
 
 
 @bp.route("/metrics/latest/text")
+@require_api_key
 def latest_metrics_text():
     rows = _fetch_latest_rows()
     if not rows:
@@ -130,6 +145,7 @@ def latest_metrics_text():
 
 
 @bp.route("/api/status")
+@require_api_key
 def status():
     with SessionLocal() as session:
         metric_count = session.execute(select(func.count()).select_from(MetricValue)).scalar()
