@@ -4,7 +4,7 @@
 
 # run the application under gunicorn
 run:
-	gunicorn -w 4 -b 0.0.0.0:8000 main:app
+	gunicorn -w 1 -b 0.0.0.0:8000 main:app
 
 # install python dependencies into the current venv
 install:
