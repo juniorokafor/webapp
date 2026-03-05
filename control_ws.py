@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 WS_CONTROL_HOST = os.getenv("WS_CONTROL_HOST", "0.0.0.0")
 WS_CONTROL_PORT = int(os.getenv("WS_CONTROL_PORT", "8765"))
-WS_CONTROL_TOKEN = os.getenv("WS_CONTROL_TOKEN", "")
+WS_CONTROL_TOKEN = os.getenv("WS_CONTROL_TOKEN")
+if not WS_CONTROL_TOKEN:
+    raise RuntimeError("WS_CONTROL_TOKEN environment variable is not set")
 
 
 class ControlHub:
@@ -81,7 +83,9 @@ class ControlHub:
                 await websocket.send(json.dumps({"type": "error", "message": "missing device_id"}))
                 await websocket.close()
                 return
-            if WS_CONTROL_TOKEN and token != WS_CONTROL_TOKEN:
+            if token != WS_CONTROL_TOKEN:
+                peer = websocket.remote_address
+                logger.warning("Rejected registration from %s (device_id=%r): invalid token", peer, device_id)
                 await websocket.send(json.dumps({"type": "error", "message": "unauthorized"}))
                 await websocket.close()
                 return
