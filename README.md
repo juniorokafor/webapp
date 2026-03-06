@@ -12,15 +12,24 @@ A Flask + Dash web application for collecting, storing, and visualising metrics 
 
 ## Architecture
 
-```
-Browser
-  └── nginx (TLS :5025)
-        ├── /            → Flask/Dash  (:8000)
-        └── /ws          → WebSocket control hub (:8765)
+```mermaid
+graph LR
+    AGENTS["Remote agents\n(cotc)"]
+    BROWSER["Browser"]
 
-Remote agents
-  ├── POST /api/metrics  → ingest metrics
-  └── ws://.../ws        → register & receive commands
+    subgraph SERVER ["webapp — Server"]
+        NGX["nginx\nTLS :5025"]
+        APP["Flask + Dash\n:8000"]
+        HUB["WebSocket\nControl Hub\n:8765"]
+        DB["SQLite"]
+    end
+
+    AGENTS -->|"HTTPS POST /api/metrics"| NGX
+    AGENTS <-->|"WSS commands / ACK"| HUB
+    NGX --> APP & HUB
+    APP --> DB
+    APP -->|"live dashboard"| BROWSER
+    BROWSER -->|"HTTPS :5025"| NGX
 ```
 
 ## Project structure
