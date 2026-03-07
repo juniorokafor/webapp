@@ -4,10 +4,13 @@ from contextlib import contextmanager
 from database import SessionLocal
 from config.config import THEME
 
-# ---------- Session Helper ----------
 
 @contextmanager
 def get_session():
+    """
+    Provide a safe SQLAlchemy session for dashboard callbacks.
+    Ensures sessions are always closed properly.
+    """
     session = SessionLocal()
     try:
         yield session
@@ -17,7 +20,11 @@ def get_session():
 
 # ---------- Shared layout defaults ----------
 
-def _base_layout(**overrides):
+def _base_layout(**overrides): # overides is there to allow passing in extra layout options
+    """
+    Base layout used by all dashboard charts so they share
+    the same theme and styling.
+    """
     return dict(
         paper_bgcolor=THEME["surface"],
         plot_bgcolor=THEME["bg"],
@@ -27,9 +34,10 @@ def _base_layout(**overrides):
     )
 
 
-# ---------- Empty Figure ----------
 
 def empty_figure():
+    """ An empty plotly figure 
+    used as a placeholder when theres no data"""
     fig = go.Figure()
     fig.update_layout(
         **_base_layout(),
@@ -42,7 +50,9 @@ def empty_figure():
 # ---------- Figure Builders ----------
 
 def _wrap_lines(text, width=45):
-    """Split text into a list of lines no longer than `width` chars."""
+    """Split text into a list of lines no longer than `width` chars.
+    This function ensures that long values in text cards are wrapped 
+    and don't overflow the card boundaries."""
     words, lines, current = text.split(), [], ""
     for word in words:
         if current and len(current) + 1 + len(word) > width:
@@ -56,6 +66,7 @@ def _wrap_lines(text, width=45):
 
 
 def build_text_card(metric_name, value):
+    """ Build a text card with a metric name and value."""
     lines = _wrap_lines(str(value))
     n = len(lines)
     font_size = 28 if n == 1 else 20 if n <= 3 else 14
@@ -97,6 +108,7 @@ def build_text_card(metric_name, value):
 
 
 def build_gauge(metric_name, value, timestamp):
+    """ Build a gauge chart for a percentage metric. """
     val = value or 0
     bar_color = THEME["accent"]
 
@@ -145,8 +157,11 @@ def build_gauge(metric_name, value, timestamp):
 
 
 def build_line_chart(metric_name, unit, rows):
+    """ Build a line chart for a time series metric. """
     times = [r.captured_at for r in rows]
+    # extract time stamps
     values = [r.value_numeric for r in rows]
+    # extract metric values
 
     unit_label = unit or "value"
 

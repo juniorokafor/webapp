@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 def create_dashboard(server):
+    """Create and configure the Dash app for the performance dashboard.
+    Args: server: The Flask server instance to attach the Dash app to."""
     dash_app = dash.Dash(
         __name__,
         server=server,
@@ -84,18 +86,23 @@ def create_dashboard(server):
             ], className="main-panel p-4"),
         ], className="body-row"),
         dcc.Interval(id="interval", interval=3000, n_intervals=0),
+        # interval component to trigger periodic refreshes every 3 seconds
     ], className="app-wrapper")
 
     @dash_app.callback(
         Output("device-dropdown", "options"),
         Input("interval", "n_intervals"),
-    )
-    def load_devices(_):
+    ) # Update device list every 3 seconds, the reaction to dcc.interval
+
+    def load_devices(_): # the _ is the value passed to the callback, its unused as we only need the trigger not the value
+        """Load the list of available devices from the database."""
         with get_session() as session:
             devices = session.execute(select(Source)).scalars().all()
+            # this retrieves all rows from the Source table and converts them to a list of Source objects
             hostname_rows = session.execute(
                 select(MetricValue.source_id, MetricValue.value_string)
                 .join(MetricDefinition, MetricValue.metric_def_id == MetricDefinition.metric_def_id)
+                # match rows where metric_def_id is the same in both tables
                 .where(MetricDefinition.metric_name == "system_info.hostname")
             ).all()
 

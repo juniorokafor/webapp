@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def _to_value_columns(value: Any) -> tuple[float | None, str | None]:
+    """Converts metric values to database columns."""
     if value is None:
         return None, None
     if isinstance(value, bool):
@@ -22,6 +23,7 @@ def _to_value_columns(value: Any) -> tuple[float | None, str | None]:
 
 
 def _get_or_create(session: Session, model, filter_col, filter_val, **kwargs):
+    """Ensure a database record exists"""
     obj = session.execute(
         select(model).where(filter_col == filter_val)
     ).scalar_one_or_none()
@@ -32,7 +34,9 @@ def _get_or_create(session: Session, model, filter_col, filter_val, **kwargs):
                 obj = model(**kwargs)
                 session.add(obj)
                 session.flush()
+                # sends pending sql operations without commiting
         except IntegrityError:
+            # if a database constraint is violated. e.g Not null is null
             obj = session.execute(
                 select(model).where(filter_col == filter_val)
             ).scalar_one()
