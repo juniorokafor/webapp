@@ -81,3 +81,17 @@ THEME = {
     "warning": "#f0a040",
     "success": "#22c55e",
 }
+
+# ---------- Dashboard chart constants ----------
+
+FONT_UI   = "Inter, Segoe UI, sans-serif"
+FONT_MONO = "JetBrains Mono, monospace"
+
+LABEL_SIZE = 11  # chart titles and metric name labels
+TICK_SIZE  = 10  # axis tick labels and axis titles
+
+# THEME colours with opacity, used for gauge bands and chart fill
+RGBA_ACCENT_5  = "rgba(34, 197, 94, 0.05)"
+RGBA_WARNING_5 = "rgba(240, 160, 64, 0.05)"
+RGBA_DANGER_5  = "rgba(224, 80, 80, 0.05)"
+RGBA_ACCENT_7  = "rgba(34, 197, 94, 0.07)"

@@ -2,7 +2,29 @@ from html import escape
 import plotly.graph_objects as go
 from contextlib import contextmanager
 from database import SessionLocal
-from config.config import THEME
+from config.config import (
+    FONT_MONO, FONT_UI, LABEL_SIZE, RGBA_ACCENT_5, RGBA_ACCENT_7,
+    RGBA_DANGER_5, RGBA_WARNING_5, THEME, TICK_SIZE,
+)
+# plolty boilerplate code
+
+# Shared axis config for figures that show no axes (text cards, empty state)
+_HIDDEN_AXES = {"xaxis": {"visible": False}, "yaxis": {"visible": False}}
+
+# Shared kwargs for paper-space annotations
+_ANNO = {"xref": "paper", "yref": "paper", "showarrow": False}
+
+
+def _axis_style(title):
+    """Return a styled axis config dict for the line chart."""
+    return {
+        "title": {"text": title, "font": {"color": THEME["muted"], "size": TICK_SIZE}},
+        "gridcolor": THEME["border"],
+        "color": THEME["muted"],
+        "showgrid": True,
+        "zeroline": False,
+        "tickfont": {"size": TICK_SIZE},
+    }
 
 
 @contextmanager
@@ -20,30 +42,24 @@ def get_session():
 
 # ---------- Shared layout defaults ----------
 
-def _base_layout(**overrides): # overides is there to allow passing in extra layout options
+def _base_layout(**overrides):
     """
     Base layout used by all dashboard charts so they share
-    the same theme and styling.
+    the same theme and styling. Extra kwargs are forwarded directly to Plotly.
     """
     return dict(
         paper_bgcolor=THEME["surface"],
         plot_bgcolor=THEME["bg"],
-        font={"family": "Inter, Segoe UI, sans-serif", "color": THEME["text"]},
+        font={"family": FONT_UI, "color": THEME["text"]},
         margin={"l": 24, "r": 24, "t": 40, "b": 24},
         **overrides,
     )
 
 
-
 def empty_figure():
-    """ An empty plotly figure 
-    used as a placeholder when theres no data"""
+    """Return an empty Plotly figure used as a placeholder when there is no data."""
     fig = go.Figure()
-    fig.update_layout(
-        **_base_layout(),
-        xaxis={"visible": False},
-        yaxis={"visible": False},
-    )
+    fig.update_layout(**_base_layout(), **_HIDDEN_AXES)
     return fig
 
 
@@ -66,7 +82,7 @@ def _wrap_lines(text, width=45):
 
 
 def build_text_card(metric_name, value):
-    """ Build a text card with a metric name and value."""
+    """Build a text card with a metric name and value."""
     lines = _wrap_lines(str(value))
     n = len(lines)
     font_size = 28 if n == 1 else 20 if n <= 3 else 14
@@ -80,60 +96,51 @@ def build_text_card(metric_name, value):
     # Metric name sits above the value block
     fig.add_annotation(
         text=escape(metric_name).upper(),
-        xref="paper", yref="paper",
         x=0.5, y=block_top + step * 1.4,
-        showarrow=False,
-        font={"size": 11, "color": THEME["muted"], "family": "Inter, sans-serif"},
+        font={"size": LABEL_SIZE, "color": THEME["muted"], "family": FONT_UI},
         align="center",
+        **_ANNO,
     )
 
     for i, line in enumerate(lines):
         fig.add_annotation(
             text=escape(line),
-            xref="paper", yref="paper",
             x=0.5, y=block_top - i * step,
-            showarrow=False,
-            font={"size": font_size, "color": THEME["accent"],
-                  "family": "JetBrains Mono, monospace"},
+            font={"size": font_size, "color": THEME["accent"], "family": FONT_MONO},
             align="center",
+            **_ANNO,
         )
 
-    fig.update_layout(
-        **_base_layout(),
-        xaxis={"visible": False},
-        yaxis={"visible": False},
-    )
+    fig.update_layout(**_base_layout(), **_HIDDEN_AXES)
 
     return fig
 
 
 def build_gauge(metric_name, value, timestamp):
-    """ Build a gauge chart for a percentage metric. """
+    """Build a gauge chart for a percentage metric."""
     val = value or 0
-    bar_color = THEME["accent"]
 
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=val,
         title={"text": metric_name.upper(),
-               "font": {"color": THEME["muted"], "size": 11}},
-        number={"font": {"color": THEME["accent"], "size": 52,
-                         "family": "JetBrains Mono, monospace"},
+               "font": {"color": THEME["muted"], "size": LABEL_SIZE}},
+        number={"font": {"color": THEME["accent"], "size": 52, "family": FONT_MONO},
                 "suffix": "%"},
         gauge={
             "axis": {
                 "range": [0, 100],
                 "tickcolor": THEME["muted"],
-                "tickfont": {"color": THEME["muted"], "size": 10},
+                "tickfont": {"color": THEME["muted"], "size": TICK_SIZE},
                 "tickwidth": 1,
             },
-            "bar": {"color": bar_color, "thickness": 0.2},
+            "bar": {"color": THEME["accent"], "thickness": 0.2},
             "bgcolor": THEME["bg"],
             "borderwidth": 0,
             "steps": [
-                {"range": [0, 60],   "color": "rgba(34, 197, 94, 0.05)"},
-                {"range": [60, 80],  "color": "rgba(240, 160, 64, 0.05)"},
-                {"range": [80, 100], "color": "rgba(224, 80, 80, 0.05)"},
+                {"range": [0, 60],   "color": RGBA_ACCENT_5},
+                {"range": [60, 80],  "color": RGBA_WARNING_5},
+                {"range": [80, 100], "color": RGBA_DANGER_5},
             ],
             "threshold": {
                 "line": {"color": THEME["danger"], "width": 2},
@@ -145,10 +152,9 @@ def build_gauge(metric_name, value, timestamp):
 
     fig.add_annotation(
         text=timestamp.strftime("updated %H:%M:%S"),
-        xref="paper", yref="paper",
         x=0.5, y=-0.08,
-        showarrow=False,
-        font={"size": 11, "color": THEME["muted"]},
+        font={"size": LABEL_SIZE, "color": THEME["muted"]},
+        **_ANNO,
     )
 
     fig.update_layout(**_base_layout())
@@ -157,11 +163,10 @@ def build_gauge(metric_name, value, timestamp):
 
 
 def build_line_chart(metric_name, unit, rows):
-    """ Build a line chart for a time series metric. """
+    """Build a line chart for a time series metric."""
+    # extract timestamps and metric values
     times = [r.captured_at for r in rows]
-    # extract time stamps
     values = [r.value_numeric for r in rows]
-    # extract metric values
 
     unit_label = unit or "value"
 
@@ -172,7 +177,7 @@ def build_line_chart(metric_name, unit, rows):
         line={"color": THEME["accent"], "width": 2, "shape": "spline", "smoothing": 0.5},
         marker={"color": THEME["accent"], "size": 4},
         fill="tozeroy",
-        fillcolor="rgba(34, 197, 94, 0.07)",
+        fillcolor=RGBA_ACCENT_7,
         hovertemplate=f"<b>%{{y:.2f}} {escape(unit_label)}</b><br>%{{x|%H:%M:%S}}<extra></extra>",
     ))
 
@@ -180,26 +185,12 @@ def build_line_chart(metric_name, unit, rows):
         **_base_layout(),
         title={
             "text": metric_name.upper(),
-            "font": {"color": THEME["muted"], "size": 11},
+            "font": {"color": THEME["muted"], "size": LABEL_SIZE},
             "x": 0,
             "xanchor": "left",
         },
-        xaxis={
-            "title": {"text": "TIME", "font": {"color": THEME["muted"], "size": 10}},
-            "gridcolor": THEME["border"],
-            "color": THEME["muted"],
-            "showgrid": True,
-            "zeroline": False,
-            "tickfont": {"size": 10},
-        },
-        yaxis={
-            "title": {"text": unit_label.upper(), "font": {"color": THEME["muted"], "size": 10}},
-            "gridcolor": THEME["border"],
-            "color": THEME["muted"],
-            "showgrid": True,
-            "zeroline": False,
-            "tickfont": {"size": 10},
-        },
+        xaxis=_axis_style("TIME"),
+        yaxis=_axis_style(unit_label.upper()),
         hoverlabel={
             "bgcolor": THEME["surface"],
             "bordercolor": THEME["border"],
