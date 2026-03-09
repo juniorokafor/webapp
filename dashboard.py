@@ -6,7 +6,10 @@ from dash import callback_context, dcc, html
 from dash.dependencies import Input, Output, State
 from sqlalchemy import desc, select
 
-from config.config import THEME
+from config.config import (
+    _CHART_HIDDEN, _CHART_VISIBLE, _EMPTY_HIDDEN, _EMPTY_VISIBLE,
+    NO_VALUE, THEME,
+)
 from control_ws import hub
 from dashboard_utils import (
     build_gauge,
@@ -18,6 +21,14 @@ from dashboard_utils import (
 from models import MetricDefinition, MetricValue, Source
 
 logger = logging.getLogger(__name__)
+
+
+def _stat_font_size(text):
+    n = len(str(text))
+    if n <= 7:  return "44px"
+    if n <= 10: return "32px"
+    if n <= 14: return "22px"
+    return "16px"
 
 
 def create_dashboard(server):
@@ -182,16 +193,6 @@ def create_dashboard(server):
             detail = str(e) or e.__class__.__name__
             return f"Failed to send command: {detail}"
 
-    def _stat_font_size(text):
-        n = len(str(text))
-        if n <= 7:
-            return "44px"
-        if n <= 10:
-            return "32px"
-        if n <= 14:
-            return "22px"
-        return "16px"
-
     @dash_app.callback(
         Output("gauge", "figure"),
         Output("graph-container", "style"),
@@ -202,14 +203,8 @@ def create_dashboard(server):
         Input("metric-dropdown", "value"),
     )
     def update_chart(_, source_id, metric_def_id):
-        _chart_hidden = {"display": "none", "height": "100%"}
-        _chart_visible = {"display": "block", "height": "100%"}
-        _empty_visible = {"display": "flex"}
-        _empty_hidden = {"display": "none"}
-        _no_value = [html.Span("-", className="stat-value")]
-
         if not source_id or not metric_def_id:
-            return empty_figure(), _chart_hidden, _empty_visible, _no_value
+            return empty_figure(), _CHART_HIDDEN, _EMPTY_VISIBLE, NO_VALUE
 
         sid = int(source_id)
         mid = int(metric_def_id)
@@ -219,7 +214,7 @@ def create_dashboard(server):
                 select(MetricDefinition).where(MetricDefinition.metric_def_id == mid)
             ).scalar_one_or_none()
             if not metric_def:
-                return empty_figure(), _chart_hidden, _empty_visible, _no_value
+                return empty_figure(), _CHART_HIDDEN, _EMPTY_VISIBLE, NO_VALUE
 
             latest = session.execute(
                 select(MetricValue)
@@ -228,14 +223,14 @@ def create_dashboard(server):
                 .limit(1)
             ).scalar_one_or_none()
             if not latest:
-                return empty_figure(), _chart_hidden, _empty_visible, _no_value
+                return empty_figure(), _CHART_HIDDEN, _EMPTY_VISIBLE, NO_VALUE
 
             if latest.value_string is not None:
                 val_display = [html.Span(latest.value_string, className="stat-value-text")]
                 return (
                     build_text_card(metric_def.metric_name, latest.value_string),
-                    _chart_visible,
-                    _empty_hidden,
+                    _CHART_VISIBLE,
+                    _EMPTY_HIDDEN,
                     val_display,
                 )
 
@@ -247,8 +242,8 @@ def create_dashboard(server):
                 ]
                 return (
                     build_gauge(metric_def.metric_name, latest.value_numeric, latest.captured_at),
-                    _chart_visible,
-                    _empty_hidden,
+                    _CHART_VISIBLE,
+                    _EMPTY_HIDDEN,
                     val_display,
                 )
 
@@ -268,8 +263,8 @@ def create_dashboard(server):
 
         return (
             build_line_chart(metric_def.metric_name, metric_def.unit, rows[::-1]),
-            _chart_visible,
-            _empty_hidden,
+            _CHART_VISIBLE,
+            _EMPTY_HIDDEN,
             val_display,
         )
 

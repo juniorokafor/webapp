@@ -4,6 +4,7 @@ import logging
 import logging.handlers
 from functools import lru_cache
 import colorlog
+from dash import html
 from pathlib import Path
 from typing import Dict
 
@@ -95,3 +96,16 @@ RGBA_ACCENT_5  = "rgba(34, 197, 94, 0.05)"
 RGBA_WARNING_5 = "rgba(240, 160, 64, 0.05)"
 RGBA_DANGER_5  = "rgba(224, 80, 80, 0.05)"
 RGBA_ACCENT_7  = "rgba(34, 197, 94, 0.07)"
+
+# Plotly boilerplate dicts shared across dashboard figures
+HIDDEN_AXES = {"xaxis": {"visible": False}, "yaxis": {"visible": False}}
+ANNO        = {"xref": "paper", "yref": "paper", "showarrow": False}
+
+# Dash callback style constants for show/hide toggling
+_CHART_HIDDEN  = {"display": "none",  "height": "100%"}
+_CHART_VISIBLE = {"display": "block", "height": "100%"}
+_EMPTY_VISIBLE = {"display": "flex"}
+_EMPTY_HIDDEN  = {"display": "none"}
+
+# Dash component constant
+NO_VALUE = [html.Span("-", className="stat-value")]

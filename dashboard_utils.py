@@ -3,16 +3,9 @@ import plotly.graph_objects as go
 from contextlib import contextmanager
 from database import SessionLocal
 from config.config import (
-    FONT_MONO, FONT_UI, LABEL_SIZE, RGBA_ACCENT_5, RGBA_ACCENT_7,
+    ANNO, FONT_MONO, FONT_UI, HIDDEN_AXES, LABEL_SIZE, RGBA_ACCENT_5, RGBA_ACCENT_7,
     RGBA_DANGER_5, RGBA_WARNING_5, THEME, TICK_SIZE,
 )
-# plolty boilerplate code
-
-# Shared axis config for figures that show no axes (text cards, empty state)
-_HIDDEN_AXES = {"xaxis": {"visible": False}, "yaxis": {"visible": False}}
-
-# Shared kwargs for paper-space annotations
-_ANNO = {"xref": "paper", "yref": "paper", "showarrow": False}
 
 
 def _axis_style(title):
@@ -59,7 +52,7 @@ def _base_layout(**overrides):
 def empty_figure():
     """Return an empty Plotly figure used as a placeholder when there is no data."""
     fig = go.Figure()
-    fig.update_layout(**_base_layout(), **_HIDDEN_AXES)
+    fig.update_layout(**_base_layout(), **HIDDEN_AXES)
     return fig
 
 
@@ -99,7 +92,7 @@ def build_text_card(metric_name, value):
         x=0.5, y=block_top + step * 1.4,
         font={"size": LABEL_SIZE, "color": THEME["muted"], "family": FONT_UI},
         align="center",
-        **_ANNO,
+        **ANNO,
     )
 
     for i, line in enumerate(lines):
@@ -108,10 +101,10 @@ def build_text_card(metric_name, value):
             x=0.5, y=block_top - i * step,
             font={"size": font_size, "color": THEME["accent"], "family": FONT_MONO},
             align="center",
-            **_ANNO,
+            **ANNO,
         )
 
-    fig.update_layout(**_base_layout(), **_HIDDEN_AXES)
+    fig.update_layout(**_base_layout(), **HIDDEN_AXES)
 
     return fig
 
@@ -154,7 +147,7 @@ def build_gauge(metric_name, value, timestamp):
         text=timestamp.strftime("updated %H:%M:%S"),
         x=0.5, y=-0.08,
         font={"size": LABEL_SIZE, "color": THEME["muted"]},
-        **_ANNO,
+        **ANNO,
     )
 
     fig.update_layout(**_base_layout())
