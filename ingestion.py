@@ -36,7 +36,7 @@ def _get_or_create(session: Session, model, filter_col, filter_val, **kwargs):
                 session.flush()
                 # sends pending sql operations without commiting
         except IntegrityError:
-            # if a database constraint is violated. e.g Not null is null
+            # handles two workers ingesting the same device at the same time
             obj = session.execute(
                 select(model).where(filter_col == filter_val)
             ).scalar_one()

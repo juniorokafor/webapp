@@ -1,6 +1,9 @@
 from sqlalchemy import Column, DateTime, Double, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase
-"""models.py provides the three database tables the dashboard reads:
+"""
+This models.py file defines the database schema using SQLAlchemy ORM. 
+In turn, SQLAlchemy maps them to tables.
+models.py provides the three database tables the dashboard reads:
 
 Source — a registered device (e.g. a server or agent)
 MetricDefinition — a metric type (e.g. cpu.usage_percent)
