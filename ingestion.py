@@ -31,7 +31,7 @@ def _get_or_create(session: Session, model, filter_col, filter_val, **kwargs):
     if obj is None:
         try:
             with session.begin_nested():
-                obj = model(**kwargs)
+                obj = model(**kwargs) # model is the sqlalchemy source class
                 session.add(obj)
                 session.flush()
                 # sends pending sql operations without commiting

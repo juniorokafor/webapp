@@ -22,7 +22,7 @@ class Source(Base):
     __tablename__ = "source"
 
     source_id = Column(Integer, primary_key=True, autoincrement=True)
-    source = Column(String(50), unique=True, nullable=False)
+    source = Column(String(50), unique=True, nullable=False) # origin
     collector_type = Column(String(50), nullable=False)
 
     def __repr__(self) -> str:
