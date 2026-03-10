@@ -17,18 +17,13 @@ from dashboard_utils import (
     build_text_card,
     empty_figure,
     get_session,
+    stat_font_size,
 )
 from models import MetricDefinition, MetricValue, Source
-
+"""dashboard.py provides the Dash app for the performance dashboard.
+Dash works by declaring callbacks, which are functions that are
+fire automatically when a UI element changes"""
 logger = logging.getLogger(__name__)
-
-
-def _stat_font_size(text):
-    n = len(str(text))
-    if n <= 7:  return "44px"
-    if n <= 10: return "32px"
-    if n <= 14: return "22px"
-    return "16px"
 
 
 def create_dashboard(server):
@@ -105,8 +100,9 @@ def create_dashboard(server):
         Input("interval", "n_intervals"),
     ) # Update device list every 3 seconds, the reaction to dcc.interval
 
-    def load_devices(_): # the _ is the value passed to the callback, its unused as we only need the trigger not the value
-        """Load the list of available devices from the database."""
+    def load_devices(_):
+        """Load the list of available devices from the database.
+        Triggers every three seconds"""
         with get_session() as session:
             devices = session.execute(select(Source)).scalars().all()
             # this retrieves all rows from the Source table and converts them to a list of Source objects
@@ -125,6 +121,8 @@ def create_dashboard(server):
         Input("device-dropdown", "value"),
     )
     def load_metrics(source_id):
+        """Load the list of available metrics for the selected device.
+        Triggers when the device dropdown is changed"""
         if not source_id:
             return []
 
@@ -146,9 +144,10 @@ def create_dashboard(server):
         Input("restart-btn", "n_clicks"),
         State("device-dropdown", "value"),
         State("interval-override-input", "value"),
-        prevent_initial_call=True,
+        prevent_initial_call=True, # all buttons start with n_clicks=0
     )
     def send_command(_, __, ___, ____, source_id, interval_value):
+        """Send a command to the selected device when any sidebar button is clicked."""
         if not source_id:
             return "Select a device first."
 
@@ -203,6 +202,8 @@ def create_dashboard(server):
         Input("metric-dropdown", "value"),
     )
     def update_chart(_, source_id, metric_def_id):
+        """Update the chart with the latest data from the database.
+        Triggers every three seconds"""
         if not source_id or not metric_def_id:
             return empty_figure(), _CHART_HIDDEN, _EMPTY_VISIBLE, NO_VALUE
 
@@ -225,27 +226,19 @@ def create_dashboard(server):
             if not latest:
                 return empty_figure(), _CHART_HIDDEN, _EMPTY_VISIBLE, NO_VALUE
 
+            _show = _CHART_VISIBLE, _EMPTY_HIDDEN
+
             if latest.value_string is not None:
                 val_display = [html.Span(latest.value_string, className="stat-value-text")]
-                return (
-                    build_text_card(metric_def.metric_name, latest.value_string),
-                    _CHART_VISIBLE,
-                    _EMPTY_HIDDEN,
-                    val_display,
-                )
+                return build_text_card(metric_def.metric_name, latest.value_string), *_show, val_display
 
             if metric_def.unit == "%":
                 val_str = f"{latest.value_numeric:.1f}"
                 val_display = [
-                    html.Span(val_str, className="stat-value", style={"fontSize": _stat_font_size(val_str)}),
+                    html.Span(val_str, className="stat-value", style={"fontSize": stat_font_size(val_str)}),
                     html.Span("%", className="stat-unit"),
                 ]
-                return (
-                    build_gauge(metric_def.metric_name, latest.value_numeric, latest.captured_at),
-                    _CHART_VISIBLE,
-                    _EMPTY_HIDDEN,
-                    val_display,
-                )
+                return build_gauge(metric_def.metric_name, latest.value_numeric, latest.captured_at), *_show, val_display
 
             rows = session.execute(
                 select(MetricValue)
@@ -257,15 +250,10 @@ def create_dashboard(server):
         unit = metric_def.unit or ""
         val_str = f"{latest.value_numeric:.2f}"
         val_display = [
-            html.Span(val_str, className="stat-value", style={"fontSize": _stat_font_size(val_str)}),
+            html.Span(val_str, className="stat-value", style={"fontSize": stat_font_size(val_str)}),
             html.Span(f" {unit}", className="stat-unit"),
         ]
 
-        return (
-            build_line_chart(metric_def.metric_name, metric_def.unit, rows[::-1]),
-            _CHART_VISIBLE,
-            _EMPTY_HIDDEN,
-            val_display,
-        )
+        return build_line_chart(metric_def.metric_name, metric_def.unit, rows[::-1]), *_show, val_display
 
     return dash_app

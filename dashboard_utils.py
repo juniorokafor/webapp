@@ -6,6 +6,16 @@ from config.config import (
     ANNO, FONT_MONO, FONT_UI, HIDDEN_AXES, LABEL_SIZE, RGBA_ACCENT_5, RGBA_ACCENT_7,
     RGBA_DANGER_5, RGBA_WARNING_5, THEME, TICK_SIZE,
 )
+"""Plotly figure building
+helper functions for the dashboard."""
+
+def stat_font_size(text):
+    """Return a CSS font-size string that scales down as the text gets longer."""
+    n = len(str(text))
+    if n <= 7:  return "44px"
+    if n <= 10: return "32px"
+    if n <= 14: return "22px"
+    return "16px"
 
 
 def _axis_style(title):

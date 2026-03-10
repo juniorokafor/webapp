@@ -1,6 +1,11 @@
 from sqlalchemy import Column, DateTime, Double, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase
+"""models.py provides the three database tables the dashboard reads:
 
+Source — a registered device (e.g. a server or agent)
+MetricDefinition — a metric type (e.g. cpu.usage_percent)
+MetricValue — a recorded reading at a point in time
+"""
 
 class Base(DeclarativeBase):
     pass
