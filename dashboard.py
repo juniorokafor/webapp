@@ -5,13 +5,10 @@ import dash_bootstrap_components as dbc
 from dash import callback_context, dcc, html
 from dash.dependencies import Input, Output, State
 from sqlalchemy import desc, select
-
-from config.config import (
-    _CHART_HIDDEN, _CHART_VISIBLE, _EMPTY_HIDDEN, _EMPTY_VISIBLE,
-    NO_VALUE, THEME,
-)
+from models import MetricDefinition, MetricValue, Source
 from control_ws import hub
 from dashboard_utils import (
+    THEME,
     build_gauge,
     build_line_chart,
     build_text_card,
@@ -19,10 +16,18 @@ from dashboard_utils import (
     get_session,
     stat_font_size,
 )
-from models import MetricDefinition, MetricValue, Source
+
+_CHART_HIDDEN  = {"display": "none",  "height": "100%"}
+_CHART_VISIBLE = {"display": "block", "height": "100%"}
+_EMPTY_VISIBLE = {"display": "flex"}
+_EMPTY_HIDDEN  = {"display": "none"}
+NO_VALUE       = [html.Span("-", className="stat-value")]
+
+
 """dashboard.py provides the Dash app for the performance dashboard.
 Dash works by declaring callbacks, which are functions that are
 fire automatically when a UI element changes"""
+
 logger = logging.getLogger(__name__)
 
 

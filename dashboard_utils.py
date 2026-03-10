@@ -2,10 +2,34 @@ from html import escape
 import plotly.graph_objects as go
 from contextlib import contextmanager
 from database import SessionLocal
-from config.config import (
-    ANNO, FONT_MONO, FONT_UI, HIDDEN_AXES, LABEL_SIZE, RGBA_ACCENT_5, RGBA_ACCENT_7,
-    RGBA_DANGER_5, RGBA_WARNING_5, THEME, TICK_SIZE,
-)
+
+THEME = {
+    "surface": "#000000",
+    "bg": "#0a0a0a",
+    "sidebar": "#0d0d0d",
+    "text": "#ffffff",
+    "muted": "#888888",
+    "accent": "#22c55e",
+    "accent2": "#4ade80",
+    "border": "#1a1a1a",
+    "danger": "#e05050",
+    "warning": "#f0a040",
+    "success": "#22c55e",
+}
+
+FONT_UI   = "Inter, Segoe UI, sans-serif"
+FONT_MONO = "JetBrains Mono, monospace"
+
+LABEL_SIZE = 11  # chart titles and metric name labels
+TICK_SIZE  = 10  # axis tick labels and axis titles
+
+RGBA_ACCENT_5  = "rgba(34, 197, 94, 0.05)"
+RGBA_WARNING_5 = "rgba(240, 160, 64, 0.05)"
+RGBA_DANGER_5  = "rgba(224, 80, 80, 0.05)"
+RGBA_ACCENT_7  = "rgba(34, 197, 94, 0.07)"
+
+HIDDEN_AXES = {"xaxis": {"visible": False}, "yaxis": {"visible": False}}
+ANNO        = {"xref": "paper", "yref": "paper", "showarrow": False}
 """Plotly figure building
 helper functions for the dashboard."""
 

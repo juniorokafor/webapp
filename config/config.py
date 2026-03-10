@@ -4,7 +4,6 @@ import logging
 import logging.handlers
 from functools import lru_cache
 import colorlog
-from dash import html
 from pathlib import Path
 from typing import Dict
 
@@ -69,43 +68,3 @@ def setup_logging() -> None:
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
 
-THEME = {
-    "surface": "#000000",
-    "bg": "#0a0a0a",
-    "sidebar": "#0d0d0d",
-    "text": "#ffffff",
-    "muted": "#888888",
-    "accent": "#22c55e",
-    "accent2": "#4ade80",
-    "border": "#1a1a1a",
-    "danger": "#e05050",
-    "warning": "#f0a040",
-    "success": "#22c55e",
-}
-
-# ---------- Dashboard chart constants ----------
-
-FONT_UI   = "Inter, Segoe UI, sans-serif"
-FONT_MONO = "JetBrains Mono, monospace"
-
-LABEL_SIZE = 11  # chart titles and metric name labels
-TICK_SIZE  = 10  # axis tick labels and axis titles
-
-# THEME colours with opacity, used for gauge bands and chart fill
-RGBA_ACCENT_5  = "rgba(34, 197, 94, 0.05)"
-RGBA_WARNING_5 = "rgba(240, 160, 64, 0.05)"
-RGBA_DANGER_5  = "rgba(224, 80, 80, 0.05)"
-RGBA_ACCENT_7  = "rgba(34, 197, 94, 0.07)"
-
-# Plotly boilerplate dicts shared across dashboard figures
-HIDDEN_AXES = {"xaxis": {"visible": False}, "yaxis": {"visible": False}}
-ANNO        = {"xref": "paper", "yref": "paper", "showarrow": False}
-
-# Dash callback style constants for show/hide toggling
-_CHART_HIDDEN  = {"display": "none",  "height": "100%"}
-_CHART_VISIBLE = {"display": "block", "height": "100%"}
-_EMPTY_VISIBLE = {"display": "flex"}
-_EMPTY_HIDDEN  = {"display": "none"}
-
-# Dash component constant
-NO_VALUE = [html.Span("-", className="stat-value")]
