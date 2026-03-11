@@ -3,10 +3,8 @@ import logging
 import os
 from datetime import datetime
 from functools import wraps
-
 from flask import Blueprint, Response, jsonify, redirect, request
 from sqlalchemy import func, select
-
 from database import SessionLocal
 from ingestion import ingest_payload
 from models import MetricDefinition, MetricValue, Source
@@ -17,14 +15,14 @@ logger = logging.getLogger(__name__)
 _API_KEY = os.getenv("API_KEY", "")
 
 def require_api_key(f):
-    @wraps(f)
+    @wraps(f) 
     def decorated(*args, **kwargs):
         if not _API_KEY or request.headers.get("X-API-Key") != _API_KEY:
             return jsonify({"error": "Unauthorized"}), 401
         return f(*args, **kwargs)
     return decorated
 
-
+# unused for project
 def _latest_metrics_query():
     subq = (
         select(
@@ -38,22 +36,24 @@ def _latest_metrics_query():
     return (
         select(MetricValue, MetricDefinition, Source)
         .join(MetricDefinition, MetricValue.metric_def_id == MetricDefinition.metric_def_id)
+        # gets the metric name and unit
         .join(Source, MetricValue.source_id == Source.source_id)
+        # gets the device id and collector type
         .join(
             subq,
             (MetricValue.source_id == subq.c.source_id)
             & (MetricValue.metric_def_id == subq.c.metric_def_id)
             & (MetricValue.captured_at == subq.c.max_captured_at),
-        )
+        ) # gets the latest reading 
         .order_by(MetricValue.captured_at)
     )
 
-
+# unused for project
 def _fetch_latest_rows():
     with SessionLocal() as session:
         return session.execute(_latest_metrics_query()).all()
 
-
+# unused for project
 def _json_envelope(data: list) -> Response:
     return Response(
         json.dumps({
@@ -65,7 +65,7 @@ def _json_envelope(data: list) -> Response:
         mimetype="application/json",
     )
 
-
+# unused for project
 def _row_to_dict(mv, md, src) -> dict:
     return {
         "name": md.metric_name,
@@ -76,7 +76,7 @@ def _row_to_dict(mv, md, src) -> dict:
         "unit": md.unit,
     }
 
-
+# unused for project
 def _format_metric_repr(mv, md, src) -> str:
     value = mv.value_numeric if mv.value_numeric is not None else mv.value_string
     unit_str = f", unit={md.unit!r}" if md.unit is not None else ""
@@ -113,7 +113,7 @@ def receive_metrics():
         logger.error(f"Ingest error: {e}")
         return jsonify({"error": "Internal server error"}), 500
 
-
+# unused for project
 @bp.route("/metrics/latest/json")
 @require_api_key
 def latest_metrics_json():
@@ -122,7 +122,7 @@ def latest_metrics_json():
         return jsonify({"message": "No metrics available yet"}), 404
     return _json_envelope([_row_to_dict(mv, md, src) for mv, md, src in rows])
 
-
+# unused for project
 @bp.route("/metrics/latest/objects")
 @require_api_key
 def latest_metrics_objects():
@@ -131,7 +131,7 @@ def latest_metrics_objects():
         return jsonify({"message": "No metrics available yet"}), 404
     return _json_envelope([_format_metric_repr(mv, md, src) for mv, md, src in rows])
 
-
+# unused for project
 @bp.route("/metrics/latest/text")
 @require_api_key
 def latest_metrics_text():
@@ -143,7 +143,7 @@ def latest_metrics_text():
         mimetype="text/plain",
     )
 
-
+# unused for project
 @bp.route("/api/status")
 @require_api_key
 def status():

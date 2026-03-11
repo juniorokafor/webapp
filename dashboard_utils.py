@@ -62,7 +62,7 @@ def get_session():
     """
     session = SessionLocal()
     try:
-        yield session
+        yield session # hands the session to the caller
     finally:
         session.close()
 
